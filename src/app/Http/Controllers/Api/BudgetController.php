@@ -16,21 +16,37 @@ class BudgetController extends Controller
 
         $month = $request->get('month', now()->format('Y-m'));
 
+        $start = \Carbon\Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+        $end   = (clone $start)->endOfMonth();
+
         $categoryGroups = $request->user()->categoryGroups()
-            ->with(['categories' => function($query) {
-                $query->where('hidden', false)->orderBy('sort_order');
+            ->with(['categories' => function ($query) use ($start, $end) {
+                $query->where('hidden', false)
+                    ->orderBy('sort_order')
+                    ->withSum(['transactions as transactions_sum' => function ($q) use ($start, $end) {
+                        $q->whereBetween('date', [$start, $end]);
+                    }], 'amount');
             }])
             ->where('hidden', false)
             ->orderBy('sort_order')
             ->get();
 
+        $categoryGroups = $categoryGroups->map(function ($group) {
+            $group->categories->transform(function ($cat) {
+                $cat->monthly_available = ($cat->budgeted ?? 0) + ($cat->transactions_sum ?? 0);
+                return $cat;
+            });
+            return $group;
+        });
         // Calculate totals
         $totalBudgeted = $categoryGroups->sum(function ($group) {
             return $group->categories->sum('budgeted');
         });
 
-        $totalActivity = $categoryGroups->sum(function ($group) {
-            return $group->categories->sum('activity');
+        $totalActivity = $categoryGroups->sum(function ($group) use ($month) {
+            return $group->categories->sum(function ($category) use ($month) {
+                return $category->monthlyActivity($month);
+            });
         });
 
         $totalAvailable = $categoryGroups->sum(function ($group) {

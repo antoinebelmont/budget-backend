@@ -40,6 +40,14 @@ class Category extends Model
         return $this->hasMany(Goal::class);
     }
 
+    public function monthlyActivity(string $month)
+    {
+        $start = \Carbon\Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+        $end   = (clone $start)->endOfMonth();
+
+        return $this->transactions->whereBetween('date', [$start, $end])->sum('amount');
+    }
+
     public function updateActivity():void
     {
         $activity = $this->transactions()->sum('amount');

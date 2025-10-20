@@ -79,6 +79,7 @@ class TransactionController extends Controller
 
     public function createTransactionGoal(Request $request): JsonResponse
     {
+        dd($request->all());
         $request->validate([
             'account_id' => 'required|exists:accounts,id',
             'date' => 'required|date',

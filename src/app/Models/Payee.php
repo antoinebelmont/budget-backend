@@ -30,7 +30,7 @@ class Payee extends Model
 
     public function getTotalSpentAttribute():float
     {
-        return $this->transactions()->where('amount', '<', 0)->sum('amount');
+        return $this->transactions()->where('is_expense',  1    )->sum('amount');
     }
 
     public function getAverageTransactionAttribute():float

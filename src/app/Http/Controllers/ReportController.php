@@ -111,7 +111,7 @@ class ReportController extends Controller
 
         $formattedData = $monthlyData->map(function ($row) {
             return [
-                'month' => Carbon::create($row->year, $row->month, 1)->format('M Y'),
+                'month' => \Carbon\Carbon::create($row->year, $row->month, 1)->format('M Y'),
                 'income' => (float) $row->income,
                 'expenses' => (float) $row->expenses,
                 'net' => (float) $row->income - (float) $row->expenses
