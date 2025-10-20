@@ -1,0 +1,68 @@
+version: '3.8'
+services:
+  app:
+    build:
+      context: ./src
+      dockerfile: Dockerfile
+    image: ynab_clone_app
+    container_name: ynab_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./src:/var/www/html
+      - ./src/vendor:/var/www/html/vendor
+      - ./src/node_modules:/var/www/html/node_modules
+    env_file:
+      - ./src/.env
+    ports:
+      - "9000:9000"
+    depends_on:
+      - db
+      - redis
+  webserver:
+    build:
+      context: ./infra/nginx
+      dockerfile: Dockerfile
+    image: ynab_clone_nginx
+    container_name: ynab_nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./src:/var/www/html:ro
+      - ./infra/nginx/conf:/etc/nginx/conf.d:ro
+    depends_on:
+      - app
+  db:
+    image: mysql:8.0
+    container_name: ynab_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ynab
+      MYSQL_USER: ynab
+      MYSQL_PASSWORD: secret
+    ports:
+      - "3306:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+  redis:
+    image: redis:7-alpine
+    container_name: ynab_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+  node:
+    image: node:20-alpine
+    container_name: ynab_node
+    working_dir: /usr/src/app
+    volumes:
+      - ./web:/usr/src/app
+      - /usr/src/app/node_modules
+    command: sh -c "yarn install && yarn dev"
+    ports:
+      - "5173:5173"
+volumes:
+  dbdata:
+  redisdata:
