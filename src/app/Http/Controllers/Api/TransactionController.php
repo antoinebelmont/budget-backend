@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
+use App\Services\CsvExportService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -79,7 +80,6 @@ class TransactionController extends Controller
 
     public function createTransactionGoal(Request $request): JsonResponse
     {
-        dd($request->all());
         $request->validate([
             'account_id' => 'required|exists:accounts,id',
             'date' => 'required|date',
@@ -99,5 +99,45 @@ class TransactionController extends Controller
             $transaction->account->updateBalance();
         }
         return response()->json(['transaction' => $transaction->load('account', 'category', 'payee')], 201);
+    }
+
+    public function export(Request $request, CsvExportService $csvService)
+    {
+        $request->validate([
+            'account_id' => 'nullable|exists:accounts,id',
+            'category_id' => 'nullable|exists:categories,id',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
+        ]);
+
+        $query = $request->user()->transactions()->with('account', 'category', 'payee');
+
+        if ($request->has('account_id')) {
+            $query->where('account_id', $request->account_id);
+        }
+
+        if ($request->has('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        if ($request->has('start_date')) {
+            $query->where('date', '>=', $request->start_date);
+        }
+
+        if ($request->has('end_date')) {
+            $query->where('date', '<=', $request->end_date);
+        }
+
+        $transactions = $query->orderBy('date', 'asc')->get();
+
+        $includeAccount = !$request->has('account_id');
+        $csvContent = $csvService->generateCsv($transactions, $includeAccount);
+
+        $filename = 'transactions_' . date('Y-m-d') . '.csv';
+
+        return response($csvContent, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
     }
 }
