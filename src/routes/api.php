@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\CategoryGroupController;
 use App\Http\Controllers\Api\GoalController;
 use App\Http\Controllers\Api\PayeeController;
 use App\Http\Controllers\Api\TransactionController;
+use App\Http\Controllers\Api\UserPreferenceController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\PasswordResetController;
 use App\Http\Controllers\ReportController;
@@ -26,8 +27,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('me', [AuthController::class, 'me']);
         Route::post('refresh', [AuthController::class, 'refresh']);
     });
+    // User Preferences
+    Route::get('user/preferences', [UserPreferenceController::class, 'index']);
+    Route::put('user/preferences', [UserPreferenceController::class, 'update']);
+
     // Accounts
     Route::apiResource('accounts', AccountController::class);
+    Route::get('accounts/for-sidebar', [AccountController::class, 'forSidebar']);
 
     // Budget
     Route::put('categories/{category}/budget', [BudgetController::class, 'updateCategoryBudget']);
@@ -35,6 +41,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Transactions
     Route::post('transaction-goal', [TransactionController::class, 'createTransactionGoal']);
+    Route::get('transactions/export', [TransactionController::class, 'export']);
     Route::apiResource('transactions', TransactionController::class);
 
     // Categories

@@ -70,4 +70,23 @@ class AccountController extends Controller
 
         return response()->json(['message' => 'Account deleted successfully'], 204);
     }
+
+    public function forSidebar(Request $request): JsonResponse
+    {
+        $accounts = $request->user()->accounts()
+            ->withCount('transactions')
+            ->orderBy('name')
+            ->get()
+            ->map(function ($account) {
+                return [
+                    'id' => $account->id,
+                    'name' => $account->name,
+                    'type' => $account->type,
+                    'transaction_count' => $account->transactions_count,
+                    'has_transactions' => $account->transactions_count > 0,
+                ];
+            });
+
+        return response()->json(['accounts' => $accounts]);
+    }
 }
