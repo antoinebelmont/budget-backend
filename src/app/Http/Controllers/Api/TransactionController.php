@@ -66,7 +66,7 @@ class TransactionController extends Controller
 
         $transaction->update($request->all());
 
-        return response()->json(['transaction' => $transaction]);
+        return response()->json(['transaction' => $transaction->load('account', 'category', 'payee')]);
     }
 
     public function destroy(Transaction $transaction): JsonResponse
