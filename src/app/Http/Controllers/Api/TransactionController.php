@@ -78,6 +78,50 @@ class TransactionController extends Controller
         return response()->json(['message' => 'Account deleted successfully'], 204);
     }
 
+    public function bulkDelete(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:transactions,id'
+        ]);
+
+        $user = $request->user();
+        $ids = $request->ids;
+
+        $transactions = Transaction::whereIn('id', $ids)
+            ->where('user_id', $user->id)
+            ->get();
+
+        foreach ($transactions as $transaction) {
+            $this->authorize('delete', $transaction);
+            $transaction->delete();
+        }
+
+        return response()->json(['message' => 'Transactions deleted successfully'], 200);
+    }
+
+    public function bulkUpdateStatus(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:transactions,id',
+            'cleared' => 'required|in:cleared,uncleared,reconciled'
+        ]);
+
+        $user = $request->user();
+
+        $transactions = Transaction::whereIn('id', $request->ids)
+            ->where('user_id', $user->id)
+            ->get();
+
+        foreach ($transactions as $transaction) {
+            $this->authorize('update', $transaction);
+            $transaction->update(['cleared' => $request->cleared]);
+        }
+
+        return response()->json(['transactions' => $transactions->load('account', 'category', 'payee')]);
+    }
+
     public function createTransactionGoal(Request $request): JsonResponse
     {
         $request->validate([
