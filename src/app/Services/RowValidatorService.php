@@ -16,10 +16,7 @@ use Carbon\Carbon;
  */
 class RowValidatorService
 {
-    /**
-     * Date formats accepted, in priority order.
-     */
-    private const DATE_FORMATS = [
+    private const FALLBACK_DATE_FORMATS = [
         'Y-m-d',
         'm/d/Y',
         'd/m/Y',
@@ -27,6 +24,17 @@ class RowValidatorService
         'M d Y',
         'd M Y',
     ];
+
+    private array $dateFormats;
+
+    public function __construct(?string $userDateFormat = null)
+    {
+        if ($userDateFormat !== null) {
+            $this->dateFormats = array_merge([$userDateFormat], self::FALLBACK_DATE_FORMATS);
+        } else {
+            $this->dateFormats = self::FALLBACK_DATE_FORMATS;
+        }
+    }
 
     private const MAX_MEMO_LENGTH = 255;
 
@@ -99,7 +107,7 @@ class RowValidatorService
             throw new RowValidationException([]);
         }
 
-        foreach (self::DATE_FORMATS as $format) {
+        foreach ($this->dateFormats as $format) {
             try {
                 $parsed = Carbon::createFromFormat($format, $value);
                 if ($parsed === false) {

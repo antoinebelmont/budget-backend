@@ -24,7 +24,10 @@ class TransactionController extends Controller
             $query->where('category_id', $request->category_id);
         }
 
-        $transactions = $query->orderBy('date', 'desc')->paginate(50);
+        $perPage = $request->integer('per_page', 50);
+        $perPage = min(max($perPage, 10), 100);
+
+        $transactions = $query->orderBy('date', 'desc')->paginate($perPage);
 
         return response()->json($transactions);
     }

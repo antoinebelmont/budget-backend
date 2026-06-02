@@ -17,7 +17,6 @@ class ImportOrchestrator
 {
     public function __construct(
         private readonly CsvParserService            $csvParser,
-        private readonly RowValidatorService         $rowValidator,
         private readonly DuplicateDetectionService   $duplicateDetection,
         private readonly PayeeCategoryMatcher        $payeeCategoryMatcher,
         private readonly TransactionPersistenceService $transactionPersistence,
@@ -35,6 +34,9 @@ class ImportOrchestrator
     {
         try {
             return DB::transaction(function () use ($content, $accountId, $user) {
+                $userDateFormat = $user->preferences['date_format'] ?? null;
+                $rowValidator = new RowValidatorService($userDateFormat);
+
                 // ------------------------------------------------------------------
                 // 1. Parse
                 // ------------------------------------------------------------------
@@ -43,7 +45,7 @@ class ImportOrchestrator
                 // ------------------------------------------------------------------
                 // 2. Validate
                 // ------------------------------------------------------------------
-                $validatedRows = $this->rowValidator->validate($parsedRows);
+                $validatedRows = $rowValidator->validate($parsedRows);
 
                 // ------------------------------------------------------------------
                 // 3. Deduplicate
