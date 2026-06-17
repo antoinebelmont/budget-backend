@@ -125,6 +125,28 @@ class TransactionController extends Controller
         return response()->json(['transactions' => $transactions->load('account', 'category', 'payee')]);
     }
 
+    public function bulkUpdateCategory(Request $request): JsonResponse
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:transactions,id',
+            'category_id' => 'nullable|exists:categories,id',
+        ]);
+
+        $user = $request->user();
+
+        $transactions = Transaction::whereIn('id', $request->ids)
+            ->where('user_id', $user->id)
+            ->get();
+
+        foreach ($transactions as $transaction) {
+            $this->authorize('update', $transaction);
+            $transaction->update(['category_id' => $request->category_id]);
+        }
+
+        return response()->json(['transactions' => $transactions->load('account', 'category', 'payee')]);
+    }
+
     public function createTransactionGoal(Request $request): JsonResponse
     {
         $request->validate([

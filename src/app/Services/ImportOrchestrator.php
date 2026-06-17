@@ -25,16 +25,17 @@ class ImportOrchestrator
     /**
      * Run the full import pipeline.
      *
-     * @param  string  $content    Raw CSV file content.
-     * @param  int     $accountId  Target account ID.
-     * @param  User    $user       Authenticated user.
+     * @param  string       $content     Raw CSV file content.
+     * @param  int          $accountId   Target account ID.
+     * @param  User         $user        Authenticated user.
+     * @param  string|null  $dateFormat  Date format from import request (overrides stored preference).
      * @return ImportResult
      */
-    public function import(string $content, int $accountId, User $user): ImportResult
+    public function import(string $content, int $accountId, User $user, ?string $dateFormat = null): ImportResult
     {
         try {
-            return DB::transaction(function () use ($content, $accountId, $user) {
-                $userDateFormat = $user->preferences['date_format'] ?? null;
+            return DB::transaction(function () use ($content, $accountId, $user, $dateFormat) {
+                $userDateFormat = $dateFormat ?? ($user->preferences['date_format'] ?? null);
                 $rowValidator = new RowValidatorService($userDateFormat);
 
                 // ------------------------------------------------------------------

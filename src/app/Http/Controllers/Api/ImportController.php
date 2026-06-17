@@ -25,11 +25,13 @@ class ImportController extends Controller
         // 1. Validate the request
         // ------------------------------------------------------------------
         $validated = $request->validate([
-            'file'       => ['required', 'file', 'mimes:csv,txt', 'max:10240'],
-            'account_id' => ['required', 'integer', 'exists:accounts,id'],
+            'file'        => ['required', 'file', 'mimes:csv,txt', 'max:10240'],
+            'account_id'  => ['required', 'integer', 'exists:accounts,id'],
+            'date_format' => ['nullable', 'string', 'in:m/d/Y,d/m/Y,Y-m-d,d-m-Y'],
         ]);
 
-        $accountId = (int) $validated['account_id'];
+        $accountId  = (int) $validated['account_id'];
+        $dateFormat = $validated['date_format'] ?? null;
 
         // ------------------------------------------------------------------
         // 2. Authorise — the account must belong to the authenticated user
@@ -50,7 +52,7 @@ class ImportController extends Controller
         // ------------------------------------------------------------------
         // 4. Delegate to the orchestrator
         // ------------------------------------------------------------------
-        $result = $this->importOrchestrator->import($content, $accountId, $request->user());
+        $result = $this->importOrchestrator->import($content, $accountId, $request->user(), $dateFormat);
 
         // ------------------------------------------------------------------
         // 5. Respond

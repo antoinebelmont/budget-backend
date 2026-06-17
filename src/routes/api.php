@@ -46,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('transactions/import', ImportController::class);
     Route::post('transactions/bulk-delete', [TransactionController::class, 'bulkDelete']);
     Route::post('transactions/bulk-update-status', [TransactionController::class, 'bulkUpdateStatus']);
+    Route::post('transactions/bulk-update-category', [TransactionController::class, 'bulkUpdateCategory']);
     Route::apiResource('transactions', TransactionController::class);
 
     // Categories
