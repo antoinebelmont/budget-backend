@@ -23,10 +23,10 @@ class CategoryController extends Controller
     public function store(Request $request): JsonResponse
     {
         $request->validate([
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|min:1|max:100',
             'category_group_id' => 'required|exists:category_groups,id',
             'budgeted' => 'sometimes|numeric|min:0',
-            'color' => 'sometimes|string|size:7|regex:/^#[0-9A-Fa-f]{6}$/',
+            'color' => 'sometimes|nullable|string|size:7|regex:/^#[0-9A-Fa-f]{6}$/',
             'sort_order' => 'sometimes|integer'
         ]);
 
@@ -37,6 +37,20 @@ class CategoryController extends Controller
 
         if (!$categoryGroup) {
             return response()->json(['message' => 'Category group not found'], 404);
+        }
+
+        // Check for duplicate category name (case-insensitive) for this user
+        $existingCategory = $request->user()->categories()
+            ->whereRaw('LOWER(name) = ?', [strtolower($request->name)])
+            ->first();
+
+        if ($existingCategory) {
+            // Idempotent behavior: return existing category
+            return response()->json([
+                'message' => 'Category already exists',
+                'category' => $existingCategory->load('categoryGroup'),
+                'duplicate' => true
+            ], 200);
         }
 
         // Get the highest sort_order for this category group
@@ -54,7 +68,8 @@ class CategoryController extends Controller
 
         return response()->json([
             'message' => 'Category created successfully',
-            'category' => $category->load('categoryGroup')
+            'category' => $category->load('categoryGroup'),
+            'duplicate' => false
         ], 201);
     }
 
